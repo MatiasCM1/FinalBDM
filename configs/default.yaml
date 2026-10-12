@@ -1,0 +1,29 @@
+# Parámetros del protocolo experimental (única fuente de verdad; no hardcodear en el código).
+seeds: [0, 1, 2, 3, 4, 5, 6, 7]
+
+split:
+  train: 0.6
+  val: 0.2
+  test: 0.2
+  stratify: true
+
+datasets: [home_credit, ulb, ieee_cis]
+
+context:
+  sizes: [1000, 5000, 10000]
+  strategies: [uniform, stratified, balanced, nearmiss, iht]
+
+decision_rules: [R0, R1, R2]      # R0=0.5 | R1=pi_ctx | R2=argmax MCC en val
+
+tabpfn:
+  model_version: "v2.5"           # ModelVersion.V2_5
+  fit_mode: low_memory
+  memory_saving_mode: auto
+  balance_probabilities: false    # el efecto debe atribuirse a R0/R1/R2
+  n_estimators: 8
+  predict_batch_size: 2000
+
+paths:
+  data_raw: data/raw
+  data_splits: data/splits
+  results: results

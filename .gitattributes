@@ -1,0 +1,14 @@
+# Normaliza finales de línea entre Windows y Linux.
+* text=auto eol=lf
+
+# Scripts de PowerShell y batch en Windows necesitan CRLF.
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binarios: no tocar.
+*.parquet binary
+*.npz binary
+*.png binary
+*.pdf binary
+*.xlsx binary

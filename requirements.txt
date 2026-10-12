@@ -1,0 +1,27 @@
+# Dependencias directas del proyecto (rangos compatibles).
+# El entorno EXACTO queda congelado en requirements.lock (lo genera scripts/setup.*).
+#
+# PyTorch NO va acá: scripts/setup.* lo instalan primero desde el índice CUDA
+# correcto (en Windows, `pip install torch` a secas instala la versión CPU).
+
+# --- Modelo fundacional ---
+tabpfn>=9.2,<10          # fijar ModelVersion.V2_5 en el código (ver configs/default.yaml)
+
+# --- Núcleo de datos / ML ---
+numpy>=2.0,<3
+pandas>=2.2,<4
+pyarrow>=17
+scikit-learn>=1.5,<2
+imbalanced-learn>=0.13,<0.15
+xgboost>=3.0,<4
+
+# --- Estadística / evaluación ---
+scipy>=1.14,<2           # wilcoxon
+statsmodels>=0.14,<0.16  # multipletests (Holm)
+
+# --- Utilidades ---
+pyyaml>=6
+python-dotenv>=1.0
+tqdm>=4.66
+matplotlib>=3.9,<4
+kaggle>=1.7              # descarga de datasets (Home Credit, IEEE-CIS)

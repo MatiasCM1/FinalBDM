@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tpf"
+version = "0.1.0"
+description = "Remuestreo o umbral: construcción de contexto para TFMs bajo desbalance extremo"
+requires-python = ">=3.10,<3.14"
+readme = "README.md"
+# Las dependencias viven en requirements*.txt (torch se instala aparte con CUDA).
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"
+markers = [
+    "gpu: requiere GPU CUDA",
+    "slow: tests lentos (descarga de pesos, inferencia TabPFN)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "NPY"]

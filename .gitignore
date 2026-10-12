@@ -1,0 +1,62 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+.coverage
+htmlcov/
+
+# ---- Entornos virtuales ----
+.venv/
+venv/
+env/
+
+# ---- Secretos ----
+.env
+*.token
+kaggle.json
+
+# ---- Datos: crudos y derivados ----
+data/raw/*
+data/interim/*
+data/splits/*.parquet
+# ...pero sí los manifiestos con hashes y los .gitkeep
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/splits/.gitkeep
+!data/MANIFEST.md
+!data/splits/MANIFEST*.json
+
+# ---- Resultados de corridas (probabilidades, logs): se regeneran ----
+results/*
+!results/.gitkeep
+# Tablas finales chicas que sí se citan en el informe (opt-in explícito):
+!results/summary/
+!results/summary/**
+
+# ---- Pesos / cachés de modelos ----
+*.ckpt
+*.safetensors
+*.pt
+*.pth
+.cache/
+tabpfn_cache/
+
+# ---- Reportes: figuras temporales y logs de compilación ----
+reports/tmp/
+*.aux
+*.log
+*.synctex.gz
+
+# ---- Editores / SO ----
+.vscode/*
+!.vscode/settings.json
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
