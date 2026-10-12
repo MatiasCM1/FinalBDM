@@ -1,10 +1,19 @@
-# Atajos para Linux/macOS. En Windows (PowerShell) usar los comandos equivalentes del README.
+ifeq ($(OS),Windows_NT)
+    SHELL := powershell.exe
+    .SHELLFLAGS := -NoProfile -Command
+    SETUP_CMD := powershell -ExecutionPolicy Bypass -File scripts/setup.ps1
+    CLEAN_CMD := Remove-Item -Recurse -Force -ErrorAction SilentlyContinue .pytest_cache, .ruff_cache, build, dist, src/*.egg-info
+else
+    SETUP_CMD := bash scripts/setup.sh
+    CLEAN_CMD := rm -rf .pytest_cache .ruff_cache build dist src/*.egg-info
+endif
+
 PY ?= python
 
 .PHONY: setup check test lint fmt clean
 
 setup:       ## Crea .venv e instala todo
-	bash scripts/setup.sh
+	$(SETUP_CMD)
 
 check:       ## Verifica entorno, GPU y token
 	$(PY) scripts/check_env.py
@@ -19,4 +28,4 @@ fmt:
 	$(PY) -m ruff format src tests scripts
 
 clean:
-	rm -rf .pytest_cache .ruff_cache build dist src/*.egg-info
+	$(CLEAN_CMD)
