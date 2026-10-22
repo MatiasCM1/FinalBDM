@@ -1,0 +1,3 @@
+Dataset,n (filas),d (features),% positivos,# pos train,# pos val,# pos test,% celdas faltantes (train),% columnas con algún faltante
+D0 Home Credit,307511,120,8.072881945686495,14895,4965,4965,24.765671577076084,55.00000000000001
+D1 ULB,284807,30,0.1727485630620034,295,98,99,0.0,0.0

@@ -1,0 +1,31 @@
+Dataset,m,Estrategia,# pos esperados,π_ctx (%),P(0 positivos) (%),Capado
+D0 Home Credit,1000,uniform,80.72908198107379,8.07290819810738,2.1871508813512693e-35,no
+D0 Home Credit,1000,stratified,81.0,8.1,0.0,no
+D0 Home Credit,1000,balanced,500.0,50.0,0.0,no
+D0 Home Credit,1000,nearmiss (supuesto),500.0,50.0,0.0,no
+D0 Home Credit,1000,iht (supuesto),500.0,50.0,0.0,no
+D0 Home Credit,5000,uniform,403.6454099053689,8.07290819810738,3.8413145787330525e-184,no
+D0 Home Credit,5000,stratified,404.0,8.08,0.0,no
+D0 Home Credit,5000,balanced,2500.0,50.0,0.0,no
+D0 Home Credit,5000,nearmiss (supuesto),2500.0,50.0,0.0,no
+D0 Home Credit,5000,iht (supuesto),2500.0,50.0,0.0,no
+D0 Home Credit,10000,uniform,807.2908198107378,8.07290819810738,0.0,no
+D0 Home Credit,10000,stratified,807.0,8.07,0.0,no
+D0 Home Credit,10000,balanced,5000.0,50.0,0.0,no
+D0 Home Credit,10000,nearmiss (supuesto),5000.0,50.0,0.0,no
+D0 Home Credit,10000,iht (supuesto),5000.0,50.0,0.0,no
+D1 ULB,1000,uniform,1.726317267854217,0.17263172678542169,17.677391168524608,no
+D1 ULB,1000,stratified,2.0,0.2,0.0,no
+D1 ULB,1000,balanced,295.0,29.5,0.0,sí
+D1 ULB,1000,nearmiss (supuesto),295.0,29.5,0.0,sí
+D1 ULB,1000,iht (supuesto),295.0,29.5,0.0,sí
+D1 ULB,5000,uniform,8.631586339271085,0.17263172678542169,0.015562811315385802,no
+D1 ULB,5000,stratified,9.0,0.18,0.0,no
+D1 ULB,5000,balanced,295.0,5.8999999999999995,0.0,sí
+D1 ULB,5000,nearmiss (supuesto),295.0,5.8999999999999995,0.0,sí
+D1 ULB,5000,iht (supuesto),295.0,5.8999999999999995,0.0,sí
+D1 ULB,10000,uniform,17.26317267854217,0.17263172678542169,1.8514864797271972e-06,no
+D1 ULB,10000,stratified,17.0,0.16999999999999998,0.0,no
+D1 ULB,10000,balanced,295.0,2.9499999999999997,0.0,sí
+D1 ULB,10000,nearmiss (supuesto),295.0,2.9499999999999997,0.0,sí
+D1 ULB,10000,iht (supuesto),295.0,2.9499999999999997,0.0,sí
