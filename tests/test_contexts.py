@@ -94,8 +94,6 @@ def test_invalid_inputs(y_ulb):
         build_context(y_ulb, N_ULB + 1, "uniform", seed=0)
     with pytest.raises(ValueError, match="desconocida"):
         build_context(y_ulb, 1_000, "foo", seed=0)
-    with pytest.raises(NotImplementedError):
-        build_context(y_ulb, 1_000, "iht", seed=0)
 
 
 # ------------------------------- NearMiss -------------------------------
@@ -143,3 +141,45 @@ def test_nearmiss_requires_X(y_ulb):
         build_context(y_ulb, 1_000, "nearmiss", seed=0)
     with pytest.raises(ValueError, match="X_tr"):
         build_context(y_ulb, 1_000, "nearmiss", seed=0, X_tr=np.zeros((10, 3)))
+
+
+# -------------------------------- IHT --------------------------------
+
+
+def test_iht_requires_X(y_ulb):
+    with pytest.raises(ValueError, match="X_tr"):
+        build_context(y_ulb, 1_000, "iht", seed=0)
+
+
+def test_iht_size_uniqueness_and_meta():
+    X, y = make_xy(2_000, 200)
+
+    idx, meta = build_context(y, 100, "iht", seed=0, X_tr=X)
+
+    assert len(idx) == 100
+    assert np.all(np.diff(idx) > 0)
+    assert idx.min() >= 0 and idx.max() < len(y)
+    assert meta.n_pos == 50
+    assert meta.n_neg == 50
+    assert meta.pi_ctx == pytest.approx(0.5)
+    assert not meta.capped
+
+
+def test_iht_deterministic_by_seed():
+    X, y = make_xy(2_000, 200)
+
+    a, _ = build_context(y, 100, "iht", seed=3, X_tr=X)
+    b, _ = build_context(y, 100, "iht", seed=3, X_tr=X)
+
+    assert np.array_equal(a, b)
+
+
+def test_iht_capped_when_there_are_few_positives():
+    X, y = make_xy(2_000, 40)
+
+    idx, meta = build_context(y, 100, "iht", seed=0, X_tr=X)
+
+    assert len(idx) == 100
+    assert meta.n_pos == 40
+    assert meta.n_neg == 60
+    assert meta.capped

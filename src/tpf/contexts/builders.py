@@ -20,7 +20,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics.pairwise import euclidean_distances
+from sklearn.model_selection import StratifiedKFold, cross_val_predict
 
 from tpf.contexts.expected import expected_context_positives
 
@@ -51,21 +53,66 @@ def _nearmiss2_negatives(X, neg, pos_sel, n_sel, k=NEARMISS_K, chunk=CHUNK) -> n
     return neg[np.argsort(score, kind="stable")[:n_sel]]  # estable => determinista
 
 
+def _iht_negatives(X, y, neg, n_sel, seed):
+    """Selecciona los negativos más fáciles de clasificar como negativos."""
+
+    if X is None or len(X) != len(y):
+        raise ValueError("iht necesita X_tr con una fila por cada elemento de y_tr.")
+
+    if n_sel == 0:
+        return np.array([], dtype=int)
+
+    # Necesitamos al menos 3 ejemplos de cada clase.
+    if min(np.bincount(y.astype(int))) < 3:
+        raise ValueError("iht necesita al menos 3 ejemplos de cada clase.")
+
+    # Dividimos los datos en 3 grupos para evaluar ejemplos
+    # que no se usaron para entrenar ese modelo.
+    cv = StratifiedKFold(
+        n_splits=3,
+        shuffle=True,
+        random_state=seed,
+    )
+
+    # Clasificador que estima la probabilidad de cada clase.
+    modelo = RandomForestClassifier(
+        n_estimators=50,
+        random_state=seed,
+        n_jobs=-1,
+    )
+
+    probabilidades = cross_val_predict(
+        modelo,
+        X,
+        y,
+        cv=cv,
+        method="predict_proba",
+        n_jobs=1,
+    )
+
+    # La columna 0 representa la probabilidad de la clase negativa.
+    prob_negativos = probabilidades[:, 0]
+
+    # Ordenamos los negativos desde los más fáciles de reconocer
+    # hasta los más difíciles.
+    orden = np.argsort(-prob_negativos[neg], kind="stable")
+
+    return neg[orden[:n_sel]]
+
+
 def build_context(
     y_tr, m: int, strategy: str, seed: int, X_tr=None
 ) -> tuple[np.ndarray, ContextMeta]:
     """Devuelve (idx, meta) para un contexto de tamaño m armado desde train."""
     if strategy not in STRATEGIES:
         raise ValueError(f"estrategia desconocida: {strategy!r}. Opciones: {STRATEGIES}")
-    if strategy == "iht":
-        raise NotImplementedError("iht: pendiente.")
 
     y = np.asarray(y_tr)
     n = len(y)
     if not 0 < m <= n:
         raise ValueError(f"m={m} debe estar entre 1 y el tamaño de train ({n}).")
-    if strategy == "nearmiss" and (X_tr is None or len(X_tr) != n):
-        raise ValueError("nearmiss necesita X_tr con una fila por cada elemento de y_tr.")
+    if strategy in {"nearmiss", "iht"} and (X_tr is None or len(X_tr) != n):
+        raise ValueError(f"{strategy} necesita X_tr con una fila por cada elemento de y_tr.")
 
     rng = np.random.default_rng(seed)
     capped = False
@@ -80,7 +127,20 @@ def build_context(
         k = int(exp.n_pos)
         pos_sel = rng.choice(pos, size=k, replace=False)
         if strategy == "nearmiss":
-            neg_sel = _nearmiss2_negatives(np.asarray(X_tr, dtype=np.float32), neg, pos_sel, m - k)
+            neg_sel = _nearmiss2_negatives(
+                np.asarray(X_tr, dtype=np.float32),
+                neg,
+                pos_sel,
+                m - k,
+            )
+        elif strategy == "iht":
+            neg_sel = _iht_negatives(
+                np.asarray(X_tr, dtype=np.float32),
+                y,
+                neg,
+                m - k,
+                seed,
+            )
         else:
             neg_sel = rng.choice(neg, size=m - k, replace=False)
         idx = np.concatenate([pos_sel, neg_sel])
