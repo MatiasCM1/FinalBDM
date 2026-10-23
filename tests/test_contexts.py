@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from scipy.spatial.distance import cdist
 
 from tpf.contexts.builders import build_context
 from tpf.data.splits import make_split
@@ -94,4 +95,51 @@ def test_invalid_inputs(y_ulb):
     with pytest.raises(ValueError, match="desconocida"):
         build_context(y_ulb, 1_000, "foo", seed=0)
     with pytest.raises(NotImplementedError):
+        build_context(y_ulb, 1_000, "iht", seed=0)
+
+
+# ------------------------------- NearMiss -------------------------------
+
+
+def make_xy(n, n_pos, d=5, seed=0):
+    rng = np.random.default_rng(seed)
+    X = rng.normal(size=(n, d)).astype("float32")
+    y = np.zeros(n, dtype="int8")
+    y[rng.choice(n, n_pos, replace=False)] = 1
+    return X, y
+
+
+@pytest.mark.parametrize(("n_pos", "m", "capped"), [(40, 100, True), (200, 100, False)])
+def test_nearmiss_picks_closest_negatives(n_pos, m, capped):
+    X, y = make_xy(2_000, n_pos)
+    idx, meta = build_context(y, m, "nearmiss", seed=0, X_tr=X)
+    assert len(idx) == m and np.all(np.diff(idx) > 0)
+    assert meta.capped is capped and meta.n_pos == min(n_pos, m // 2)
+    # referencia por fuerza bruta: distancia media a los 3 positivos más lejanos
+    pos_sel = idx[y[idx] == 1]
+    neg = np.flatnonzero(y == 0)
+    score = np.sort(cdist(X[neg], X[pos_sel]), axis=1)[:, -3:].mean(axis=1)
+    expected = neg[np.argsort(score, kind="stable")[: m - len(pos_sel)]]
+    assert np.array_equal(idx[y[idx] == 0], np.sort(expected))
+
+
+def test_nearmiss_deterministic_and_subset_of_train():
+    X, y = make_xy(3_000, 600)
+    parts = make_split(y, seed=0)
+    tr = parts["train"]
+    kw = {"m": 200, "strategy": "nearmiss", "X_tr": X[tr]}
+    a, _ = build_context(y[tr], seed=1, **kw)
+    b, _ = build_context(y[tr], seed=1, **kw)
+    c, _ = build_context(y[tr], seed=2, **kw)
+    assert np.array_equal(a, b)
+    assert not np.array_equal(a, c)
+    assert np.isin(tr[a], tr).all()
+    assert not np.isin(tr[a], parts["val"]).any()
+    assert not np.isin(tr[a], parts["test"]).any()
+
+
+def test_nearmiss_requires_X(y_ulb):
+    with pytest.raises(ValueError, match="X_tr"):
         build_context(y_ulb, 1_000, "nearmiss", seed=0)
+    with pytest.raises(ValueError, match="X_tr"):
+        build_context(y_ulb, 1_000, "nearmiss", seed=0, X_tr=np.zeros((10, 3)))
