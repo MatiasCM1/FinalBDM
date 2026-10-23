@@ -53,21 +53,23 @@ def _nearmiss2_negatives(X, neg, pos_sel, n_sel, k=NEARMISS_K, chunk=CHUNK) -> n
     return neg[np.argsort(score, kind="stable")[:n_sel]]  # estable => determinista
 
 
-def _iht_negatives(X, y, neg, n_sel, seed):
-    """Selecciona los negativos más fáciles de clasificar como negativos."""
+def _iht_negatives(
+    X: np.ndarray, y: np.ndarray, neg: np.ndarray, n_sel: int, seed: int
+) -> np.ndarray:
+    """Selecciona los n_sel negativos más fáciles de clasificar como negativos (IHT).
 
+    Descarta las instancias mayoritarias con alta 'dureza' (baja p(y=0|x) out-of-fold).
+    Desempata de forma determinista con la semilla para evitar sesgo por orden de fila.
+    """
     if X is None or len(X) != len(y):
         raise ValueError("iht necesita X_tr con una fila por cada elemento de y_tr.")
 
     if n_sel == 0:
         return np.array([], dtype=int)
 
-    # Necesitamos al menos 3 ejemplos de cada clase.
     if min(np.bincount(y.astype(int))) < 3:
         raise ValueError("iht necesita al menos 3 ejemplos de cada clase.")
 
-    # Dividimos los datos en 3 grupos para evaluar ejemplos
-    # que no se usaron para entrenar ese modelo.
     cv = StratifiedKFold(
         n_splits=3,
         shuffle=True,
@@ -77,6 +79,8 @@ def _iht_negatives(X, y, neg, n_sel, seed):
     # Clasificador que estima la probabilidad de cada clase.
     modelo = RandomForestClassifier(
         n_estimators=50,
+        max_depth=10,
+        min_samples_leaf=10,
         random_state=seed,
         n_jobs=-1,
     )
@@ -91,11 +95,14 @@ def _iht_negatives(X, y, neg, n_sel, seed):
     )
 
     # La columna 0 representa la probabilidad de la clase negativa.
-    prob_negativos = probabilidades[:, 0]
+    prob_neg = probabilidades[neg, 0]
 
     # Ordenamos los negativos desde los más fáciles de reconocer
     # hasta los más difíciles.
-    orden = np.argsort(-prob_negativos[neg], kind="stable")
+    # La semilla se usa para desempatar de forma determinista.
+    rng_tie = np.random.default_rng(seed)
+    tie_breaker = rng_tie.random(len(neg))
+    orden = np.lexsort((tie_breaker, -prob_neg))
 
     return neg[orden[:n_sel]]
 
