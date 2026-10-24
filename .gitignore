@@ -60,3 +60,6 @@ reports/tmp/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ---- Otros ----
+docs/
