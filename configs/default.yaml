@@ -21,7 +21,7 @@ tabpfn:
   memory_saving_mode: auto
   balance_probabilities: false    # el efecto debe atribuirse a R0/R1/R2
   n_estimators: 8
-  predict_batch_size: 2000
+  predict_batch_size: 5000        # optimizado tras piloto (pico VRAM <= 4.1 GB de 6 GB)
 
 paths:
   data_raw: data/raw
