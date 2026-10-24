@@ -1,8 +1,10 @@
-"""Piloto D08: TabPFN-2.5, contextos m=1000 y lotes de predicción.
+"""Piloto D08/D09: TabPFN-2.5, contextos m=1k/5k/10k y lotes de predicción.
 
 Uso:
     python scripts/03_pilot_tabpfn.py
     python scripts/03_pilot_tabpfn.py --n-estimators 4
+    python scripts/03_pilot_tabpfn.py --sizes 5000 10000
+    python scripts/03_pilot_tabpfn.py --sizes 5000 10000 --n-estimators 4
 """
 
 from __future__ import annotations
@@ -108,7 +110,7 @@ def save_log(path: Path, new_rows: list[dict]) -> None:
     temp.replace(path)
 
 
-def run_case(dataset: str, strategy: str, n_estimators: int, cfg: dict) -> list[dict]:
+def run_case(dataset: str, strategy: str, n_estimators: int, cfg: dict, m: int = M) -> list[dict]:
     """Prepara datos desde train, ajusta el modelo y mide tres tamaños de lote."""
     start = time.perf_counter()
 
@@ -118,7 +120,7 @@ def run_case(dataset: str, strategy: str, n_estimators: int, cfg: dict) -> list[
     y_tr = np.asarray(y)[tr]
 
     view = tabpfn_view().fit(X.iloc[tr])
-    idx, meta = build_context(y_tr, M, strategy, SEED)
+    idx, meta = build_context(y_tr, m, strategy, SEED)
     X_ctx = view.transform(X.iloc[tr].iloc[idx]).to_numpy(dtype=np.float32)
 
     rng = np.random.default_rng(SEED)
@@ -131,7 +133,7 @@ def run_case(dataset: str, strategy: str, n_estimators: int, cfg: dict) -> list[
         "dataset": dataset,
         "strategy": strategy,
         "seed": SEED,
-        "m": M,
+        "m": m,
         "n_pos": meta.n_pos,
         "n_neg": meta.n_neg,
         "pi_ctx": round(meta.pi_ctx, 6),
@@ -141,7 +143,10 @@ def run_case(dataset: str, strategy: str, n_estimators: int, cfg: dict) -> list[
         "preparation_s": prep_s,
     }
 
-    print(f"\n{dataset} / {strategy}: {meta.n_pos} positivos, {meta.n_neg} negativos")
+    print(
+        f"\n{dataset} / {strategy} / m={m} (n_est={n_estimators}): "
+        f"{meta.n_pos} positivos, {meta.n_neg} negativos"
+    )
 
     if meta.n_pos == 0 or meta.n_neg == 0:
         print("  [SKIP] Contexto de una sola clase: TabPFN no puede clasificar")
@@ -268,6 +273,13 @@ def main() -> None:
         default=("uniform", "balanced"),
     )
     ap.add_argument(
+        "--sizes",
+        nargs="+",
+        type=int,
+        choices=(1_000, 5_000, 10_000),
+        default=(M,),
+    )
+    ap.add_argument(
         "--n-estimators",
         type=int,
         choices=(4, 8),
@@ -281,9 +293,10 @@ def main() -> None:
     path = RESULTS / "pilot_log.csv"
 
     for dataset in args.datasets:
-        for strategy in args.strategies:
-            rows = run_case(dataset, strategy, args.n_estimators, cfg)
-            save_log(path, rows)
+        for m in args.sizes:
+            for strategy in args.strategies:
+                rows = run_case(dataset, strategy, args.n_estimators, cfg, m=m)
+                save_log(path, rows)
 
     print(f"\nLog del piloto: {path}")
 
