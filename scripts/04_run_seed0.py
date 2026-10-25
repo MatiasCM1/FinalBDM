@@ -102,6 +102,7 @@ def export_summary(model_id):
                         "seed": SEED,
                         "strategy": strategy,
                         "m": m,
+                        "model": model_id,
                         "rule": rule,
                         "threshold": result.get("threshold", ""),
                         "n_pos": ctx.get("n_pos", ""),
@@ -124,6 +125,7 @@ def export_summary(model_id):
         "seed",
         "strategy",
         "m",
+        "model",
         "rule",
         "threshold",
         "n_pos",
@@ -181,7 +183,7 @@ def main():
     if args.batch_size <= 0:
         ap.error("--batch-size debe ser positivo")
 
-    model_id = f"tabpfn25_e{args.n_estimators}_bs{args.batch_size}"
+    model_id = f"tabpfn25_e{args.n_estimators}"
 
     if not args.summary_only:
         if not torch.cuda.is_available():

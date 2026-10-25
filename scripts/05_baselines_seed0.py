@@ -24,7 +24,7 @@ from tpf.paths import REPORTS, RESULTS
 SEED = 0
 DATASETS = ("home_credit", "ulb")
 MODELS = ("rf100", "xgb100_hist")
-RULES = ("R0", "R2")
+RULES = ("R0", "R1", "R2")
 METRICS = (
     "auc_roc",
     "mcc",
@@ -77,7 +77,9 @@ def is_cached(dataset, model_id):
     return True
 
 
-def save_prediction(dataset, model_id, model, X_train, y_train, X_val, X_test, va, te):
+def save_prediction(
+    dataset, model_id, model, X_train, y_train, X_val, X_test, va, te, y_val, y_test
+):
     path = run_dir(dataset, model_id)
     path.mkdir(parents=True, exist_ok=True)
 
@@ -122,7 +124,7 @@ def save_prediction(dataset, model_id, model, X_train, y_train, X_val, X_test, v
         encoding="utf-8",
     )
 
-    score_saved_run(path)
+    score_saved_run(path, y_val=y_val, y_test=y_test)
 
 
 def export_summary():
@@ -197,12 +199,27 @@ def main():
 
         X_test = preprocessor.transform(X.iloc[te]).to_numpy(dtype=np.float32)
 
-        y_train = np.asarray(y)[tr]
+        y_arr = np.asarray(y)
+        y_train = y_arr[tr]
+        y_val = y_arr[va]
+        y_test = y_arr[te]
 
         for model_id in missing:
             model = make_model(model_id)
 
-            save_prediction(dataset, model_id, model, X_train, y_train, X_val, X_test, va, te)
+            save_prediction(
+                dataset,
+                model_id,
+                model,
+                X_train,
+                y_train,
+                X_val,
+                X_test,
+                va,
+                te,
+                y_val,
+                y_test,
+            )
 
             del model
             gc.collect()
