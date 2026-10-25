@@ -25,7 +25,8 @@ from tpf.paths import CONFIGS, REPORTS, RESULTS
 SEED = 0
 DATASETS = ("home_credit", "ulb")
 SIZES = (1_000, 5_000)
-STRATEGIES = ("uniform", "balanced")
+STRATEGIES = ("uniform", "stratified", "balanced")
+ALL_STRATEGIES = ("uniform", "stratified", "balanced", "nearmiss", "iht")
 RULES = ("R0", "R1", "R2")
 METRICS = (
     "auc_roc",
@@ -173,9 +174,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--datasets", nargs="+", choices=DATASETS, default=DATASETS)
     ap.add_argument("--sizes", nargs="+", type=int, choices=SIZES, default=SIZES)
-    ap.add_argument("--strategies", nargs="+", choices=STRATEGIES, default=STRATEGIES)
+    ap.add_argument("--strategies", nargs="+", choices=ALL_STRATEGIES, default=STRATEGIES)
     ap.add_argument("--n-estimators", type=int, choices=(4, 8), default=cfg["n_estimators"])
     ap.add_argument("--batch-size", type=int, default=cfg["predict_batch_size"])
+    ap.add_argument("--max-eval-neg", type=int, default=cfg.get("max_eval_neg"))
     ap.add_argument("--summary-only", action="store_true")
 
     args = ap.parse_args()
@@ -183,7 +185,8 @@ def main():
     if args.batch_size <= 0:
         ap.error("--batch-size debe ser positivo")
 
-    model_id = f"tabpfn25_e{args.n_estimators}"
+    suffix = f"_neg{args.max_eval_neg}" if args.max_eval_neg else ""
+    model_id = f"tabpfn25_e{args.n_estimators}{suffix}"
 
     if not args.summary_only:
         if not torch.cuda.is_available():
@@ -194,7 +197,15 @@ def main():
         for dataset in args.datasets:
             for m in args.sizes:
                 for strategy in args.strategies:
-                    run = run_once(dataset, SEED, strategy, m, model_id, predict_fn)
+                    run = run_once(
+                        dataset,
+                        SEED,
+                        strategy,
+                        m,
+                        model_id,
+                        predict_fn,
+                        max_eval_neg=args.max_eval_neg,
+                    )
                     print(f"{dataset} / {strategy} / m={m}: {run['status']}")
 
     export_summary(model_id)

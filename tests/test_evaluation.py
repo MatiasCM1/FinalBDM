@@ -77,3 +77,16 @@ def test_runner_does_not_infer_twice(tmp_path, monkeypatch):
     assert set(scores["rules"]) == {"R0", "R1", "R2"}
     runner.score_saved_run(out)
     assert len(calls) == 1
+
+
+def test_subsample_eval_indices_preserves_positives_and_total_weight():
+    from tpf.evaluation.runner import subsample_eval_indices
+
+    y = np.array([0] * 100 + [1] * 5)
+    idx = np.arange(len(y))
+    sel, w = subsample_eval_indices(idx, y, max_neg=20, seed=42)
+
+    assert len(sel) == 25
+    assert int(y[sel].sum()) == 5
+    assert float(w[y[sel] == 1].sum()) == pytest.approx(5.0)
+    assert float(w[y[sel] == 0].sum()) == pytest.approx(100.0)

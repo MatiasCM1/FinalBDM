@@ -25,6 +25,29 @@ def _write_json(path, obj):
     os.replace(tmp, path)
 
 
+def subsample_eval_indices(indices, y_all, max_neg, seed):
+    """Conserva todos los positivos y toma hasta max_neg negativos con peso N_neg / n_neg."""
+    idx = np.asarray(indices, dtype=int)
+    if max_neg is None:
+        return idx, None
+    if max_neg <= 0:
+        raise ValueError("max_neg debe ser positivo")
+
+    y_sub = np.asarray(y_all)[idx]
+    pos_mask = y_sub == 1
+    neg_idx = idx[~pos_mask]
+    n_neg_total = len(neg_idx)
+    if n_neg_total <= max_neg:
+        return idx, None
+
+    rng = np.random.default_rng(seed)
+    neg_sel = rng.choice(neg_idx, size=int(max_neg), replace=False)
+    sel = np.sort(np.concatenate([idx[pos_mask], neg_sel]))
+    y_sel = np.asarray(y_all)[sel]
+    w = np.where(y_sel == 1, 1.0, n_neg_total / float(max_neg))
+    return sel, w
+
+
 def score_saved_run(run_dir, y_val=None, y_test=None):
     """Recalcula R0/R1/R2 usando solo archivos guardados (sin GPU ni TabPFN)."""
     run_dir = Path(run_dir)
@@ -32,18 +55,23 @@ def score_saved_run(run_dir, y_val=None, y_test=None):
     if info["status"] != "complete":
         raise ValueError("La corrida no tiene probabilidades para evaluar")
 
-    if y_val is None and y_test is None:
-        _, y = load_dataset(info["dataset"])
-        parts = load_split(info["dataset"], info["seed"])
-        y_val = np.asarray(y)[parts["val"]]
-        y_test = np.asarray(y)[parts["test"]]
-    elif y_val is None or y_test is None:
+    if (y_val is None) != (y_test is None):
         raise ValueError("Pasar ambas etiquetas (val y test), o ninguna")
 
     with np.load(run_dir / "predictions.npz") as data:
         p_val, p_test = data["p_val"], data["p_test"]
         w_val = data["w_val"] if "w_val" in data else None
         w_test = data["w_test"] if "w_test" in data else None
+        if y_val is None and y_test is None:
+            _, y = load_dataset(info["dataset"])
+            y_arr = np.asarray(y)
+            if "idx_val" in data and "idx_test" in data:
+                y_val = y_arr[data["idx_val"]]
+                y_test = y_arr[data["idx_test"]]
+            else:
+                parts = load_split(info["dataset"], info["seed"])
+                y_val = y_arr[parts["val"]]
+                y_test = y_arr[parts["test"]]
         if len(p_val) != len(y_val) or len(p_test) != len(y_test):
             raise ValueError("Las probabilidades no coinciden con las filas de val/test")
         rules = choose_thresholds(y_val, p_val, info["context"]["pi_ctx"], w_val)
@@ -80,6 +108,7 @@ def run_once(
     results_dir=None,
     sample_weight_val=None,
     sample_weight_test=None,
+    max_eval_neg=None,
 ):
     """Carga split, arma contexto, infiere una sola vez y guarda todo.
 
@@ -106,6 +135,13 @@ def run_once(
     y = np.asarray(y)
     parts = load_split(dataset, seed)
     tr, va, te = (parts[p] for p in ("train", "val", "test"))
+    if max_eval_neg is not None:
+        va, w_va = subsample_eval_indices(va, y, max_eval_neg, int(seed) * 1000 + 1)
+        te, w_te = subsample_eval_indices(te, y, max_eval_neg, int(seed) * 1000 + 2)
+        if sample_weight_val is None:
+            sample_weight_val = w_va
+        if sample_weight_test is None:
+            sample_weight_test = w_te
     X_tr, y_tr = X.iloc[tr], y[tr]
 
     # Ambos preprocesadores se ajustan SOLO con train y ANTES de armar el contexto.
@@ -124,6 +160,8 @@ def run_once(
         "model_id": model_id,
         "context": asdict(meta),
     }
+    if max_eval_neg is not None:
+        info["max_eval_neg"] = int(max_eval_neg)
     if meta.n_pos == 0 or meta.n_neg == 0:
         info["status"] = "skipped"
         info["reason"] = "El contexto tiene una sola clase; no se ejecuta TabPFN"
