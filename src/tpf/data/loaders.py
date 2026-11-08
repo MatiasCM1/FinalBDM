@@ -57,6 +57,16 @@ SPECS: dict[str, DatasetSpec] = {
         n_pos=24_825,
         id_cols=("SK_ID_CURR",),
     ),
+    # D2: IEEE-CIS Fraud Detection.
+    "ieee_cis": DatasetSpec(
+        name="ieee_cis",
+        filename="train_transaction.csv",
+        target="isFraud",
+        n_rows=590_540,
+        n_cols=394,
+        n_pos=20_663,
+        id_cols=("TransactionID",),
+    ),
 }
 
 
@@ -116,10 +126,80 @@ def load_home_credit(data_dir: str | Path | None = None) -> tuple[pd.DataFrame, 
     return load_from_spec(SPECS["home_credit"], data_dir)
 
 
+# Forma esperada del archivo train_identity.csv.
+IEEE_IDENTITY_SHAPE = (144_233, 41)
+
+
+def load_ieee_cis(data_dir: str | Path | None = None) -> tuple[pd.DataFrame, pd.Series]:
+    """D2. Une transaction e identity por TransactionID y devuelve (X, y).
+
+    Se conserva cada transacción, incluso cuando no tiene datos de identidad.
+    No se imputan, escalan ni codifican variables en este paso.
+    """
+
+    root = Path(data_dir if data_dir is not None else DATA_RAW)
+    transaction_path = root / "train_transaction.csv"
+    identity_path = root / "train_identity.csv"
+
+    for path in (transaction_path, identity_path):
+        if not path.exists():
+            raise FileNotFoundError(f"No existe {path}. Descargarlo de IEEE-CIS en Kaggle.")
+
+    # El archivo principal tiene las transacciones y la etiqueta isFraud.
+    transaction = pd.read_csv(transaction_path, low_memory=False)
+    spec = SPECS["ieee_cis"]
+    _validate(transaction, spec, transaction_path)
+
+    # Identity aporta información adicional para parte de las transacciones.
+    identity = pd.read_csv(identity_path, low_memory=False)
+
+    if identity.shape != IEEE_IDENTITY_SHAPE:
+        raise DataIntegrityError(
+            f"ieee_cis ({identity_path.name}): forma {identity.shape}, "
+            f"se esperaba {IEEE_IDENTITY_SHAPE}"
+        )
+
+    if "TransactionID" not in identity.columns:
+        raise DataIntegrityError("ieee_cis: falta TransactionID en identity")
+
+    if identity["TransactionID"].isna().any():
+        raise DataIntegrityError("ieee_cis: hay TransactionID nulos en identity")
+
+    if identity["TransactionID"].duplicated().any():
+        raise DataIntegrityError("ieee_cis: hay TransactionID repetidos en identity")
+
+    if not identity["TransactionID"].isin(transaction["TransactionID"]).all():
+        raise DataIntegrityError(
+            "ieee_cis: identity contiene transacciones que no están en transaction"
+        )
+
+    # Left join: no se pierden transacciones sin información de identity.
+    df = transaction.merge(
+        identity,
+        on="TransactionID",
+        how="left",
+        sort=False,
+        validate="one_to_one",
+    )
+
+    expected_cols = spec.n_cols + IEEE_IDENTITY_SHAPE[1] - 1
+
+    if df.shape != (spec.n_rows, expected_cols):
+        raise DataIntegrityError(
+            f"ieee_cis: forma después del join {df.shape}, "
+            f"se esperaba {(spec.n_rows, expected_cols)}"
+        )
+
+    y = df[spec.target].astype("int8")
+    X = df.drop(columns=[spec.target, *spec.id_cols])
+
+    return X, y
+
+
 def load_dataset(name: str, data_dir: str | Path | None = None) -> tuple[pd.DataFrame, pd.Series]:
     """Punto de entrada por nombre (los de configs/default.yaml)."""
     if name == "ieee_cis":
-        raise NotImplementedError("IEEE-CIS se incorpora en la Sem 6.")
+        return load_ieee_cis(data_dir)
     if name not in SPECS:
         raise KeyError(f"Dataset desconocido: {name!r}. Opciones: {sorted(SPECS)}")
     return load_from_spec(SPECS[name], data_dir)

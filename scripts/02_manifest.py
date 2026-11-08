@@ -8,6 +8,8 @@ from tpf.paths import DATA_RAW, ROOT
 SOURCES = {
     "creditcard.csv": "Kaggle: mlg-ulb/creditcardfraud (D1)",
     "application_train.csv": "Kaggle: home-credit-default-risk (D0)",
+    "train_transaction.csv": "Kaggle: ieee-fraud-detection (D2, transaction)",
+    "train_identity.csv": "Kaggle: ieee-fraud-detection (D2, identity)",
 }
 
 

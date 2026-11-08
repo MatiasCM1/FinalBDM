@@ -1,4 +1,4 @@
-| Dataset | m | Estrategia | # pos esperados | π_ctx (%) | P(0 positivos) (%) | Capado |
+| Dataset | m | Estrategia | # pos esperados | pi_ctx (%) | P(0 positivos) (%) | Capado |
 |---|---|---|---|---|---|---|
 | D0 Home Credit | 1,000 | uniform | 80.73 | 8.07 | 0.00 | no |
 | D0 Home Credit | 1,000 | stratified | 81.00 | 8.10 | 0.00 | no |
@@ -30,3 +30,18 @@
 | D1 ULB | 10,000 | balanced | 295.00 | 2.95 | 0.00 | sí |
 | D1 ULB | 10,000 | nearmiss (supuesto) | 295.00 | 2.95 | 0.00 | sí |
 | D1 ULB | 10,000 | iht (supuesto) | 295.00 | 2.95 | 0.00 | sí |
+| D2 IEEE-CIS | 1,000 | uniform | 34.99 | 3.50 | 0.00 | no |
+| D2 IEEE-CIS | 1,000 | stratified | 35.00 | 3.50 | 0.00 | no |
+| D2 IEEE-CIS | 1,000 | balanced | 500.00 | 50.00 | 0.00 | no |
+| D2 IEEE-CIS | 1,000 | nearmiss (supuesto) | 500.00 | 50.00 | 0.00 | no |
+| D2 IEEE-CIS | 1,000 | iht (supuesto) | 500.00 | 50.00 | 0.00 | no |
+| D2 IEEE-CIS | 5,000 | uniform | 174.95 | 3.50 | 0.00 | no |
+| D2 IEEE-CIS | 5,000 | stratified | 175.00 | 3.50 | 0.00 | no |
+| D2 IEEE-CIS | 5,000 | balanced | 2,500.00 | 50.00 | 0.00 | no |
+| D2 IEEE-CIS | 5,000 | nearmiss (supuesto) | 2,500.00 | 50.00 | 0.00 | no |
+| D2 IEEE-CIS | 5,000 | iht (supuesto) | 2,500.00 | 50.00 | 0.00 | no |
+| D2 IEEE-CIS | 10,000 | uniform | 349.91 | 3.50 | 0.00 | no |
+| D2 IEEE-CIS | 10,000 | stratified | 350.00 | 3.50 | 0.00 | no |
+| D2 IEEE-CIS | 10,000 | balanced | 5,000.00 | 50.00 | 0.00 | no |
+| D2 IEEE-CIS | 10,000 | nearmiss (supuesto) | 5,000.00 | 50.00 | 0.00 | no |
+| D2 IEEE-CIS | 10,000 | iht (supuesto) | 5,000.00 | 50.00 | 0.00 | no |
