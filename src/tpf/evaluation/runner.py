@@ -13,7 +13,7 @@ from tpf.contexts.builders import build_context
 from tpf.data.loaders import load_dataset
 from tpf.data.preprocessing import aux_view, cat_indices, tabpfn_view
 from tpf.data.splits import load_split
-from tpf.evaluation.metrics import check_inputs, evaluate
+from tpf.evaluation.metrics import analyze_feature_distributions, check_inputs, evaluate
 from tpf.evaluation.thresholds import choose_thresholds
 from tpf.paths import RESULTS
 
@@ -48,7 +48,7 @@ def subsample_eval_indices(indices, y_all, max_neg, seed):
     return sel, w
 
 
-def score_saved_run(run_dir, y_val=None, y_test=None):
+def score_saved_run(run_dir, y_val=None, y_test=None, X_test=None):
     """Recalcula R0/R1/R2 usando solo archivos guardados (sin GPU ni TabPFN)."""
     run_dir = Path(run_dir)
     info = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
@@ -63,15 +63,19 @@ def score_saved_run(run_dir, y_val=None, y_test=None):
         w_val = data["w_val"] if "w_val" in data else None
         w_test = data["w_test"] if "w_test" in data else None
         if y_val is None and y_test is None:
-            _, y = load_dataset(info["dataset"])
+            X_full, y = load_dataset(info["dataset"])
             y_arr = np.asarray(y)
             if "idx_val" in data and "idx_test" in data:
                 y_val = y_arr[data["idx_val"]]
                 y_test = y_arr[data["idx_test"]]
+                if X_test is None:
+                    X_test = X_full.iloc[data["idx_test"]]
             else:
                 parts = load_split(info["dataset"], info["seed"])
                 y_val = y_arr[parts["val"]]
                 y_test = y_arr[parts["test"]]
+                if X_test is None:
+                    X_test = X_full.iloc[parts["test"]]
         if len(p_val) != len(y_val) or len(p_test) != len(y_test):
             raise ValueError("Las probabilidades no coinciden con las filas de val/test")
         rules = choose_thresholds(y_val, p_val, info["context"]["pi_ctx"], w_val)
@@ -83,6 +87,13 @@ def score_saved_run(run_dir, y_val=None, y_test=None):
             }
             for rule, threshold in rules.items()
         }
+        top_features = (
+            analyze_feature_distributions(
+                X_test, y_test, p_test, threshold=rules["R2"], sample_weight=w_test
+            )
+            if X_test is not None
+            else []
+        )
 
     def safe(value):
         if isinstance(value, float) and not np.isfinite(value):
@@ -93,7 +104,7 @@ def score_saved_run(run_dir, y_val=None, y_test=None):
             return [safe(v) for v in value]
         return value
 
-    result = safe({"rules": scores})
+    result = safe({"rules": scores, "top_features_test": top_features})
     _write_json(run_dir / "metrics.json", result)
     return result
 
@@ -203,5 +214,5 @@ def run_once(
         round(torch.cuda.max_memory_allocated() / 2**20, 1) if use_cuda else None
     )
     _write_json(info_path, info)
-    score_saved_run(run_dir, y[va], y[te])
+    score_saved_run(run_dir, y[va], y[te], X_test=X.iloc[te])
     return {"status": "complete", "path": str(run_dir)}

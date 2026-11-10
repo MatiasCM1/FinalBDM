@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from tpf.evaluation.metrics import evaluate
+from tpf.evaluation.metrics import analyze_feature_distributions, evaluate
 from tpf.evaluation.thresholds import choose_thresholds
 
 
@@ -14,6 +14,34 @@ def test_all_negative_predictions():
     assert result["mcc"] == 0
     assert result["balanced_accuracy"] == 0.5
     assert result["auc_roc"] == 0.5
+    assert result["auc_pr"] == 0.5
+    assert result["ks_stat"] == 0.0
+    assert result["precision_fraud"] == 0.0
+    assert result["recall_fraud"] == 0.0
+    assert result["specificity"] == 1.0
+    assert result["fpr"] == 0.0
+    assert result["g_mean"] == 0.0
+    assert result["confusion_matrix"]["tn"] == 2.0
+    assert result["confusion_matrix"]["fn"] == 2.0
+
+
+def test_analyze_feature_distributions():
+    df = pd.DataFrame(
+        {
+            "f_strong": [0.0] * 10 + [10.0] * 10,
+            "f_noise": [1.0, 2.0] * 10,
+        }
+    )
+    y = [0] * 10 + [1] * 10
+    p = [0.05] * 10 + [0.95] * 10
+    dist = analyze_feature_distributions(df, y, p, threshold=0.5, top_k=2)
+    assert len(dist) == 2
+    assert dist[0]["feature"] == "f_strong"
+    assert dist[0]["corr_with_pred"] == pytest.approx(1.0)
+    assert dist[0]["overlap_true"] == pytest.approx(0.0)
+    assert dist[0]["ks_true"] == pytest.approx(1.0)
+    assert dist[1]["feature"] == "f_noise"
+    assert dist[1]["overlap_true"] == pytest.approx(1.0)
 
 
 def test_weighted_metrics_and_reliability_curve():
