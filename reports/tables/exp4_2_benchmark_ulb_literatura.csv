@@ -1,0 +1,17 @@
+Fuente / Trabajo,Modelo / Pipeline,Filas Train / Contexto,AUPRC (PR-AUC),ROC-AUC,F1-Fraud,MCC,Precision,Recall,TP / FP en Test
+Talukder et al. (2024) [Con Data Leakage],EIBMC + IHT (escalado y balanceo pre-split),688 (post-IHT global),—,1.000,0.995,—,0.991,1.000,58 / 0.5 (test 114 filas)
+Mqadi et al. (2021) [Test Submuestreado 50/50],Random Forest + NearMiss-2,~688 (balanceado),1.000*,1.000*,0.890*,—,1.000*,0.800,12 / 0 (test de 30 filas!)
+"Guerra & Monti (2026) [Sin Leakage, 1 seed]",RFC individual bajo RUS (τ=0.5),688 (344 pos + 344 neg),0.686,0.973,0.108,—,0.057,0.888,87 / 1439
+"Guerra & Monti (2026) [Sin Leakage, 1 seed]",XGBC individual bajo RUS (τ=0.5),688 (344 pos + 344 neg),0.683,0.979,0.087,—,0.046,0.888,87 / 1817
+"Guerra & Monti (2026) [Sin Leakage, 1 seed]",EIBMC (Ensamble + Isotónica) + RUS,688 (344 pos + 344 neg),0.721,0.976,0.789,0.790,0.815,0.765,75 / 17
+"Guerra & Monti (2026) [Sin Leakage, 1 seed]",EIBMC (Ensamble + Isotónica) + Cluster Centroids,688 (344 pos + 344 neg),0.825,0.975,0.770,0.771,0.809,0.735,72 / 17
+"Guerra & Monti (2026) [Sin Leakage, 1 seed]",EIBMC (Ensamble + Isotónica) + IHT-RFC,"194,647 (reducción 2.4%)",0.797,0.961,0.802,0.802,0.819,0.786,77 / 17
+"Guerra & Monti (2026) [Sin Leakage, 1 seed]",EIBMC (Ensamble + Isotónica) + IHT-GBC,"40,144 (reducción 80.0%)",0.858,0.975,0.840,0.843,0.916,0.776,76 / 7
+"Guerra & Monti (2026) [Sin Leakage, 1 seed]",EIBMC (Ensamble + Isotónica) + IHT-XGBC (Mejor),"58,093 (reducción 71.0%)",0.869,0.970,0.876,0.877,0.931,0.827,81 / 6
+"Nuestro TPF [Sin Leakage, 8 semillas]",TabPFN-2.5 Zero-Shot | Balanced m=1.000 + R2,"1,000 (295 pos + 705 neg)",0.760 ± 0.094,0.988 ± 0.005,0.817 ± 0.036,0.819 ± 0.036,0.851,0.790,78.2 / 14.2
+"Nuestro TPF [Sin Leakage, 8 semillas]",TabPFN-2.5 Zero-Shot | Balanced m=5.000 + R2,"5,000 (295 pos + 4,705 neg)",0.783 ± 0.080,0.988 ± 0.005,0.789 ± 0.066,0.792 ± 0.064,0.792,0.797,78.9 / 22.7
+"Nuestro TPF [Sin Leakage, 8 semillas]",TabPFN-2.5 Zero-Shot | Balanced m=10.000 + R2,"10,000 (295 pos + 9,705 neg)",0.833 ± 0.065,0.988 ± 0.005,0.811 ± 0.047,0.813 ± 0.047,0.838,0.793,78.5 / 16.3
+"Nuestro TPF [Sin Leakage, 8 semillas]",TabPFN-2.5 Zero-Shot | Stratified m=1.000 + R2,"1,000 (¡solo 2 pos! + 998 neg)",0.700 ± 0.083,0.969 ± 0.011,0.804 ± 0.045,0.805 ± 0.045,0.838,0.774,76.6 / 14.9
+"Nuestro TPF [Sin Leakage, 8 semillas]",TabPFN-2.5 Zero-Shot | Stratified m=10.000 + R2,"10,000 (17 pos + 9,983 neg)",0.774 ± 0.082,0.973 ± 0.016,0.821 ± 0.045,0.822 ± 0.046,0.858,0.790,78.2 / 13.5
+"Nuestro TPF [Sin Leakage, 8 semillas]",TabPFN-2.5 Zero-Shot | IHT m=10.000 + R2,"10,000 (295 pos + 9,705 neg)",0.655 ± 0.088,0.983 ± 0.003,0.678 ± 0.106,0.684 ± 0.094,0.662,0.722,71.5 / 46.2
+"Nuestro TPF [Sin Leakage, 8 semillas]",Random Forest (rf100) Full-Train + R0 / R2,"170,884 (295 pos + 170,589 neg)",0.849 ± 0.038,0.949 ± 0.017,0.854 ± 0.025,0.859 ± 0.024,0.954,0.774,76.6 / 3.8

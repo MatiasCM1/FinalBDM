@@ -4,7 +4,9 @@ repos:
     hooks:
       - id: ruff-check
         args: [--fix]
+        exclude: ^notebooks/
       - id: ruff-format
+        exclude: ^notebooks/
 
   - repo: local
     hooks:
